@@ -2921,6 +2921,23 @@ format_ed_session_kvp (u8 * s, va_list * args)
   return s;
 }
 
+u8 *
+format_policy_bypass (u8 * s, va_list * args)
+{
+  clib_bihash_kv_16_8_t *v = va_arg (*args, clib_bihash_kv_16_8_t *);
+  nat_policy_bypass_key_t k;
+
+  k.as_u64[0] = v->key[0];
+  k.as_u64[1] = v->key[1];
+
+  s =
+    format (s, "local %U remote %U proto %U",
+	    format_ip4_address, &k.l_addr, format_ip4_address, &k.r_addr,
+	    format_ip_protocol, k.proto);
+
+  return s;
+}
+
 static u32
 snat_get_worker_in2out_cb (ip4_header_t * ip0, u32 rx_fib_index0)
 {
@@ -3708,6 +3725,15 @@ snat_config (vlib_main_t * vm, unformat_input_t * input)
 			    static_mapping_memory_size);
       clib_bihash_set_kvp_format_fn_8_8 (&sm->static_mapping_by_external,
 					 format_static_mapping_kvp);
+
+      // TODO: check if configuration match use case
+      clib_bihash_init_16_8 (&sm->policy_bypass,
+                             "policy_based_nat_bypass",
+                             static_mapping_buckets,
+                             static_mapping_memory_size);
+      clib_bihash_set_kvp_format_fn_16_8 (&sm->policy_bypass,
+                                          format_policy_bypass);
+
     }
 
   return 0;

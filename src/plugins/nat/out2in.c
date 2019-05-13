@@ -671,6 +671,32 @@ icmp_out2in_slow_path (snat_main_t * sm,
   return next0;
 }
 
+static inline int
+policy_bypass_out2in (snat_main_t * sm, ip4_header_t * ip)
+{
+  clib_bihash_kv_16_8_t kv, v;
+  nat_policy_bypass_key_t k;
+
+  k.as_u64[1] = 0;
+
+  k.l_addr = ip->dst_address;
+  k.r_addr = ip->src_address;
+  k.proto = ip->protocol;
+
+  kv.key[0] = k.as_u64[0];
+  kv.key[1] = k.as_u64[1];
+
+  if (clib_bihash_search_16_8 (&sm->policy_bypass, &kv, &v))
+    {
+      k.r_addr.as_u32 = 0;
+      kv.key[0] = k.as_u64[0];
+
+      return clib_bihash_search_16_8 (&sm->policy_bypass, &kv, &v);
+    }
+
+  return 0;
+}
+
 static int
 nat_out2in_sm_unknown_proto (snat_main_t * sm,
 			     vlib_buffer_t * b,
@@ -702,6 +728,12 @@ nat_out2in_sm_unknown_proto (snat_main_t * sm,
   return 0;
 }
 
+// TODO: REMOVE ME
+static void
+gdb_break_1 (void)
+{
+}
+
 VLIB_NODE_FN (snat_out2in_node) (vlib_main_t * vm,
 				 vlib_node_runtime_t * node,
 				 vlib_frame_t * frame)
@@ -718,6 +750,9 @@ VLIB_NODE_FN (snat_out2in_node) (vlib_main_t * vm,
   from = vlib_frame_vector_args (frame);
   n_left_from = frame->n_vectors;
   next_index = node->cached_next_index;
+
+  // TODO: REMOVE ME
+  gdb_break_1 ();
 
   while (n_left_from > 0)
     {
@@ -794,6 +829,9 @@ VLIB_NODE_FN (snat_out2in_node) (vlib_main_t * vm,
 	      next0 = SNAT_OUT2IN_NEXT_ICMP_ERROR;
 	      goto trace0;
 	    }
+
+          if (PREDICT_FALSE (!policy_bypass_out2in (sm, ip0)))
+            goto trace0;
 
 	  proto0 = ip_proto_to_snat_proto (ip0->protocol);
 
@@ -960,6 +998,12 @@ VLIB_NODE_FN (snat_out2in_node) (vlib_main_t * vm,
 	      next1 = SNAT_OUT2IN_NEXT_ICMP_ERROR;
 	      goto trace1;
 	    }
+
+          if (PREDICT_FALSE (sm->policy_bypass_enabled))
+            {
+              if (PREDICT_FALSE (!policy_bypass_out2in (sm, ip1)))
+                goto trace1;
+            }
 
 	  proto1 = ip_proto_to_snat_proto (ip1->protocol);
 
@@ -1154,6 +1198,22 @@ VLIB_NODE_FN (snat_out2in_node) (vlib_main_t * vm,
 	  rx_fib_index0 = vec_elt (sm->ip4_main->fib_index_by_sw_if_index,
 				   sw_if_index0);
 
+          if (PREDICT_FALSE (ip0->ttl == 1))
+	    {
+	      vnet_buffer (b0)->sw_if_index[VLIB_TX] = (u32) ~ 0;
+	      icmp4_error_set_vnet_buffer (b0, ICMP4_time_exceeded,
+					   ICMP4_time_exceeded_ttl_exceeded_in_transit,
+					   0);
+	      next0 = SNAT_OUT2IN_NEXT_ICMP_ERROR;
+	      goto trace00;
+	    }
+
+          if (PREDICT_FALSE (sm->policy_bypass_enabled))
+            {
+              if (PREDICT_FALSE (!policy_bypass_out2in (sm, ip0)))
+                goto trace00;
+            }
+
 	  proto0 = ip_proto_to_snat_proto (ip0->protocol);
 
 	  if (PREDICT_FALSE (proto0 == ~0))
@@ -1170,17 +1230,7 @@ VLIB_NODE_FN (snat_out2in_node) (vlib_main_t * vm,
 	      other_packets++;
 	      goto trace00;
 	    }
-
-	  if (PREDICT_FALSE (ip0->ttl == 1))
-	    {
-	      vnet_buffer (b0)->sw_if_index[VLIB_TX] = (u32) ~ 0;
-	      icmp4_error_set_vnet_buffer (b0, ICMP4_time_exceeded,
-					   ICMP4_time_exceeded_ttl_exceeded_in_transit,
-					   0);
-	      next0 = SNAT_OUT2IN_NEXT_ICMP_ERROR;
-	      goto trace00;
-	    }
-
+	  
 	  if (PREDICT_FALSE (ip4_is_fragment (ip0)))
 	    {
 	      next0 = SNAT_OUT2IN_NEXT_REASS;

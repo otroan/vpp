@@ -57,6 +57,21 @@ typedef struct
   };
 } snat_session_key_t;
 
+/* Policy based NAT bypass key */
+typedef struct
+{
+  union
+  {
+    struct
+    {
+      ip4_address_t l_addr;
+      ip4_address_t r_addr;
+      u32 proto:8;
+    };
+    u64 as_u64[2];
+  };
+} nat_policy_bypass_key_t;
+
 /* endpoint-dependent session key (6-tuple) */
 typedef struct
 {
@@ -471,6 +486,9 @@ typedef struct snat_main_s
 
   /* Find a static mapping by external */
   clib_bihash_8_8_t static_mapping_by_external;
+
+  /* Policy based NAT bypass */
+  clib_bihash_16_8_t policy_bypass;
 
   /* Static mapping pool */
   snat_static_mapping_t *static_mappings;

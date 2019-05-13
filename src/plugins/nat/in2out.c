@@ -821,6 +821,36 @@ icmp_in2out_slow_path (snat_main_t * sm,
   return next0;
 }
 
+static inline int
+policy_bypass_in2out (snat_main_t * sm, ip4_header_t * ip)
+{
+  clib_bihash_kv_16_8_t kv, v;
+  nat_policy_bypass_key_t k;
+
+  k.as_u64[1] = 0;
+
+  k.l_addr = ip->src_address;
+  k.r_addr = ip->dst_address;
+  k.proto = ip->protocol;
+
+  kv.key[0] = k.as_u64[0];
+  kv.key[1] = k.as_u64[1];
+
+  // TODO:
+  // isn't it better to split ?
+  // using same or different key ?
+  // and do multiple lookups based on
+  if (clib_bihash_search_16_8 (&sm->policy_bypass, &kv, &v))
+    {
+      k.r_addr.as_u32 = 0;
+      kv.key[0] = k.as_u64[0];
+
+      return clib_bihash_search_16_8 (&sm->policy_bypass, &kv, &v);
+    }
+
+  return 0;
+}
+
 static int
 nat_in2out_sm_unknown_proto (snat_main_t * sm,
 			     vlib_buffer_t * b,
@@ -859,6 +889,12 @@ nat_in2out_sm_unknown_proto (snat_main_t * sm,
   return 0;
 }
 
+// TODO: REMOVE ME
+static void
+gdb_break_2 (void)
+{
+}
+
 static inline uword
 snat_in2out_node_fn_inline (vlib_main_t * vm,
 			    vlib_node_runtime_t * node,
@@ -881,6 +917,9 @@ snat_in2out_node_fn_inline (vlib_main_t * vm,
   from = vlib_frame_vector_args (frame);
   n_left_from = frame->n_vectors;
   next_index = node->cached_next_index;
+
+  // TODO: REMOVE ME
+  gdb_break_2 ();
 
   while (n_left_from > 0)
     {
@@ -964,6 +1003,9 @@ snat_in2out_node_fn_inline (vlib_main_t * vm,
 	  /* Next configured feature, probably ip4-lookup */
 	  if (is_slow_path)
 	    {
+              if (PREDICT_FALSE (!policy_bypass_in2out (sm, ip0)));
+                goto trace00;
+
 	      if (PREDICT_FALSE (proto0 == ~0))
 		{
 		  if (nat_in2out_sm_unknown_proto
@@ -976,7 +1018,7 @@ snat_in2out_node_fn_inline (vlib_main_t * vm,
 		  other_packets++;
 		  goto trace00;
 		}
-
+              
 	      if (PREDICT_FALSE (proto0 == SNAT_PROTOCOL_ICMP))
 		{
 		  next0 = icmp_in2out_slow_path
@@ -1153,6 +1195,9 @@ snat_in2out_node_fn_inline (vlib_main_t * vm,
 	  /* Next configured feature, probably ip4-lookup */
 	  if (is_slow_path)
 	    {
+              if (PREDICT_FALSE (!policy_bypass_in2out (sm, ip1)));
+                goto trace01;
+
 	      if (PREDICT_FALSE (proto1 == ~0))
 		{
 		  if (nat_in2out_sm_unknown_proto
@@ -1165,14 +1210,14 @@ snat_in2out_node_fn_inline (vlib_main_t * vm,
 		  other_packets++;
 		  goto trace01;
 		}
-
+              
 	      if (PREDICT_FALSE (proto1 == SNAT_PROTOCOL_ICMP))
 		{
 		  next1 = icmp_in2out_slow_path
 		    (sm, b1, ip1, icmp1, sw_if_index1, rx_fib_index1, node,
 		     next1, now, thread_index, &s1);
 		  icmp_packets++;
-		  goto trace01;
+		  goto trace00;
 		}
 	    }
 	  else
@@ -1378,6 +1423,9 @@ snat_in2out_node_fn_inline (vlib_main_t * vm,
 	  /* Next configured feature, probably ip4-lookup */
 	  if (is_slow_path)
 	    {
+              if (PREDICT_FALSE (!policy_bypass_in2out (sm, ip0)));
+                goto trace0;
+
 	      if (PREDICT_FALSE (proto0 == ~0))
 		{
 		  if (nat_in2out_sm_unknown_proto

@@ -486,6 +486,127 @@ nat_ha_resync_command_fn (vlib_main_t * vm, unformat_input_t * input,
 }
 
 static clib_error_t *
+nat_bypass_policy_command_fn (vlib_main_t * vm, unformat_input_t * input,
+                              vlib_cli_command_t *cmd)
+{
+  unformat_input_t _line_input, *line_input = &_line_input;
+  vnet_main_t *vnm = vnet_get_main ();
+  snat_main_t *sm = &snat_main;
+  ip4_address_t l_addr, r_addr;
+  clib_bihash_kv_16_8_t kv, v;
+  nat_policy_bypass_key_t k;
+  bool is_add = true;
+  clib_error_t *error = 0;
+  u32 sw_if_index = ~0;
+  u32 protocol = ~0;
+
+  l_addr.as_u32 = 0;
+  r_addr.as_u32 = 0;
+
+  if (sm->deterministic)
+    return clib_error_return (0, UNSUPPORTED_IN_DET_MODE_STR);
+
+  /* Get a line of input. */
+  if (!unformat_user (input, unformat_line_input, line_input))
+    return clib_error_return (0, "missing required arguments");
+
+  if (!unformat (line_input, "protocol %u", &protocol))
+    {
+      error = clib_error_return (0, "protocol ID required");
+      goto done;
+    }
+
+  if (protocol < 0 || protocol > 255)
+    {
+      error = clib_error_return (0, "bad IP protocol number: '%u'",
+                                 protocol);
+      goto done;
+    }
+
+  if (unformat (line_input, "local %U", unformat_ip4_address, &l_addr))
+    ;
+  else if (unformat (line_input, "local %U", unformat_vnet_sw_interface, vnm, &sw_if_index))
+    ;
+  else
+    {
+      error = clib_error_return (0, "local address/interface required");
+      goto done;
+    }
+
+  if (unformat (line_input, "remote any"))
+    ;
+  else if (unformat (line_input, "remote %U", unformat_ip4_address, &r_addr))
+    ;
+  else
+    {
+      error = clib_error_return (0, "remote endpoint required");
+      goto done;
+    }
+
+  while (unformat_check_input (line_input) != UNFORMAT_END_OF_INPUT)
+    {
+      if (unformat (line_input, "del"))
+        is_add = false;
+      else
+        {
+          error = clib_error_return (0, "unknown input: '%U'",
+                                     format_unformat_error, line_input);
+          goto done;
+        }
+    }
+
+  // TODO: remove
+
+  if (is_add)
+    vlib_cli_output (vm, "is_add\n");
+  else
+    vlib_cli_output (vm, "is_del\n");
+
+  if (r_addr.as_u32 == 0)
+    vlib_cli_output (vm, "remote: any\n");
+  else
+    vlib_cli_output (vm, "remote: %U\n", format_ip4_address, &r_addr);
+
+  vlib_cli_output (vm, "local: %U\n", format_ip4_address, &l_addr);
+
+  // if (sw_if_index != ~0)
+  // get ip address from switch
+
+  k.as_u64[1] = 0;
+
+  k.l_addr = l_addr;
+  k.r_addr = r_addr;
+  k.proto = protocol;
+
+  kv.key[0] = k.as_u64[0];
+  kv.key[1] = k.as_u64[1];
+  
+  if (clib_bihash_search_16_8 (&sm->policy_bypass, &kv, &v))
+    {
+      if (!is_add)
+        {
+          error = clib_error_return (0, "policy doesn't exist");
+          goto done;
+        }
+    }
+  else
+    {
+      if (is_add)
+        {
+          error = clib_error_return (0, "policy exist");
+          goto done;
+        }
+    }
+  
+  clib_bihash_add_del_16_8 (&sm->policy_bypass, &kv, is_add);
+
+  done:
+  unformat_free (line_input);
+
+  return error;
+}
+
+static clib_error_t *
 add_address_command_fn (vlib_main_t * vm,
 			unformat_input_t * input, vlib_cli_command_t * cmd)
 {
@@ -2074,6 +2195,20 @@ VLIB_CLI_COMMAND (nat_ha_resync_command, static) = {
     .path = "nat ha resync",
     .short_help = "nat ha resync",
     .function = nat_ha_resync_command_fn,
+};
+
+/*?
+ * @cliexpar
+ * @cliexstart{nat44 bypass policy}
+ * Bypass NAT (policy for bypassing NAT44 translation)
+ * @cliexend
+?*/
+VLIB_CLI_COMMAND (nat_bypass_policy_command, static) = {
+    .path = "nat44 bypass policy add",
+    .function = nat_bypass_policy_command_fn,
+    .short_help = "nat44 bypass policy add [inside|outside]"
+      "local <interface>|<addr>/<plen> remote any|<addr>/<plen> "
+      "[protocol <ID>] [del]",
 };
 
 /*?
