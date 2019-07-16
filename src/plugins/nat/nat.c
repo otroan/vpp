@@ -197,7 +197,7 @@ nat_free_session_data (snat_main_t * sm, snat_session_t * s, u32 thread_index,
       ed_kv.key[0] = ed_key.as_u64[0];
       ed_kv.key[1] = ed_key.as_u64[1];
       if (clib_bihash_add_del_16_8 (&tsm->in2out_ed, &ed_kv, 0))
-	nat_log_warn ("in2out_ed key del failed");
+	nat_elog_warn ("in2out_ed key del failed");
       return;
     }
 
@@ -225,7 +225,7 @@ nat_free_session_data (snat_main_t * sm, snat_session_t * s, u32 thread_index,
       ed_kv.key[0] = ed_key.as_u64[0];
       ed_kv.key[1] = ed_key.as_u64[1];
       if (clib_bihash_add_del_16_8 (&tsm->out2in_ed, &ed_kv, 0))
-	nat_log_warn ("out2in_ed key del failed");
+	nat_elog_warn ("out2in_ed key del failed");
       ed_key.l_addr = s->in2out.addr;
       ed_key.fib_index = s->in2out.fib_index;
       if (!snat_is_unk_proto_session (s))
@@ -238,7 +238,7 @@ nat_free_session_data (snat_main_t * sm, snat_session_t * s, u32 thread_index,
       ed_kv.key[0] = ed_key.as_u64[0];
       ed_kv.key[1] = ed_key.as_u64[1];
       if (clib_bihash_add_del_16_8 (&tsm->in2out_ed, &ed_kv, 0))
-	nat_log_warn ("in2out_ed key del failed");
+	nat_elog_warn ("in2out_ed key del failed");
 
       if (!is_ha)
 	nat_syslog_nat44_sdel (s->user_index, s->in2out.fib_index,
@@ -252,10 +252,10 @@ nat_free_session_data (snat_main_t * sm, snat_session_t * s, u32 thread_index,
     {
       kv.key = s->in2out.as_u64;
       if (clib_bihash_add_del_8_8 (&tsm->in2out, &kv, 0))
-	nat_log_warn ("in2out key del failed");
+	nat_elog_warn ("in2out key del failed");
       kv.key = s->out2in.as_u64;
       if (clib_bihash_add_del_8_8 (&tsm->out2in, &kv, 0))
-	nat_log_warn ("out2in key del failed");
+	nat_elog_warn ("out2in key del failed");
 
       if (!is_ha)
 	nat_syslog_nat44_apmdel (s->user_index, s->in2out.fib_index,
@@ -334,7 +334,7 @@ nat_user_get_or_create (snat_main_t * sm, ip4_address_t * addr, u32 fib_index,
 
       /* add user */
       if (clib_bihash_add_del_8_8 (&tsm->user_hash, &kv, 1))
-	nat_log_warn ("user_hash keay add failed");
+	nat_elog_warn ("user_hash keay add failed");
 
       vlib_set_simple_counter (&sm->total_users, thread_index, 0,
 			       pool_elts (tsm->users));
@@ -466,8 +466,9 @@ nat_ed_session_alloc (snat_main_t * sm, snat_user_t * u, u32 thread_index,
       if ((u->nsessions + u->nstaticsessions) >=
 	  sm->max_translations_per_user)
 	{
-	  nat_log_warn ("max translations per user %U", format_ip4_address,
-			&u->addr);
+	  // TODO: convert to elog
+	  /* nat_log_warn ("max translations per user %U", format_ip4_address,
+	     &u->addr); */
 	  snat_ipfix_logging_max_entries_per_user
 	    (thread_index, sm->max_translations_per_user, u->addr.as_u32);
 	  return 0;
@@ -861,7 +862,7 @@ snat_add_static_mapping (ip4_address_t l_addr, ip4_address_t e_addr,
 		      foreach_snat_protocol
 #undef _
 		    default:
-		      nat_log_info ("unknown protocol");
+		      nat_elog_info ("unknown protocol");
 		      return VNET_API_ERROR_INVALID_VALUE_2;
 		    }
 		  break;
@@ -1043,7 +1044,7 @@ snat_add_static_mapping (ip4_address_t l_addr, ip4_address_t e_addr,
 		      foreach_snat_protocol
 #undef _
 		    default:
-		      nat_log_info ("unknown protocol");
+		      nat_elog_info ("unknown protocol");
 		      return VNET_API_ERROR_INVALID_VALUE_2;
 		    }
 		  break;
@@ -1224,7 +1225,7 @@ nat44_add_del_lb_static_mapping (ip4_address_t e_addr, u16 e_port,
 		      foreach_snat_protocol
 #undef _
 		    default:
-		      nat_log_info ("unknown protocol");
+		      nat_elog_info ("unknown protocol");
 		      return VNET_API_ERROR_INVALID_VALUE_2;
 		    }
 		  break;
@@ -1261,7 +1262,7 @@ nat44_add_del_lb_static_mapping (ip4_address_t e_addr, u16 e_port,
       kv.value = m - sm->static_mappings;
       if (clib_bihash_add_del_8_8 (&sm->static_mapping_by_external, &kv, 1))
 	{
-	  nat_log_err ("static_mapping_by_external key add failed");
+	  nat_elog_err ("static_mapping_by_external key add failed");
 	  return VNET_API_ERROR_UNSPECIFIED;
 	}
 
@@ -1337,7 +1338,7 @@ nat44_add_del_lb_static_mapping (ip4_address_t e_addr, u16 e_port,
 		      foreach_snat_protocol
 #undef _
 		    default:
-		      nat_log_info ("unknown protocol");
+		      nat_elog_info ("unknown protocol");
 		      return VNET_API_ERROR_INVALID_VALUE_2;
 		    }
 		  break;
@@ -1352,7 +1353,7 @@ nat44_add_del_lb_static_mapping (ip4_address_t e_addr, u16 e_port,
       kv.key = m_key.as_u64;
       if (clib_bihash_add_del_8_8 (&sm->static_mapping_by_external, &kv, 0))
 	{
-	  nat_log_err ("static_mapping_by_external key del failed");
+	  nat_elog_err ("static_mapping_by_external key del failed");
 	  return VNET_API_ERROR_UNSPECIFIED;
 	}
 
@@ -1369,7 +1370,7 @@ nat44_add_del_lb_static_mapping (ip4_address_t e_addr, u16 e_port,
               kv.key = m_key.as_u64;
               if (clib_bihash_add_del_8_8(&sm->static_mapping_by_local, &kv, 0))
                 {
-                  nat_log_err ("static_mapping_by_local key del failed");
+                  nat_elog_err ("static_mapping_by_local key del failed");
                   return VNET_API_ERROR_UNSPECIFIED;
                 }
             }
@@ -1503,7 +1504,7 @@ nat44_lb_static_mapping_add_del_local (ip4_address_t e_addr, u16 e_port,
 	  kv.key = m_key.as_u64;
 	  kv.value = m - sm->static_mappings;
 	  if (clib_bihash_add_del_8_8 (&sm->static_mapping_by_local, &kv, 1))
-	    nat_log_err ("static_mapping_by_local key add failed");
+	    nat_elog_err ("static_mapping_by_local key add failed");
 	}
     }
   else
@@ -1524,7 +1525,7 @@ nat44_lb_static_mapping_add_del_local (ip4_address_t e_addr, u16 e_port,
 	  m_key.fib_index = match_local->fib_index;
 	  kv.key = m_key.as_u64;
 	  if (clib_bihash_add_del_8_8 (&sm->static_mapping_by_local, &kv, 0))
-	    nat_log_err ("static_mapping_by_local key del failed");
+	    nat_elog_err ("static_mapping_by_local key del failed");
 	}
 
       if (sm->num_workers > 1)
@@ -1659,7 +1660,7 @@ snat_del_address (snat_main_t * sm, ip4_address_t addr, u8 delete_sm,
       /* Check if address is used in some static mapping */
       if (is_snat_address_used_in_static_mapping (sm, addr))
 	{
-	  nat_log_notice ("address used in static mapping");
+	  nat_elog_notice ("address used in static mapping");
 	  return VNET_API_ERROR_UNSPECIFIED;
 	}
     }
@@ -2279,6 +2280,7 @@ snat_init (vlib_main_t * vm)
   sm->addr_and_port_alloc_alg = NAT_ADDR_AND_PORT_ALLOC_ALG_DEFAULT;
   sm->forwarding_enabled = 0;
   sm->log_class = vlib_log_register_class ("nat", 0);
+  sm->log_level = SNAT_LOG_NONE;
   sm->mss_clamping = 0;
 
   node = vlib_get_node_by_name (vm, (u8 *) "error-drop");
@@ -2445,7 +2447,7 @@ snat_free_outside_address_and_port (snat_address_t * addresses,
       foreach_snat_protocol
 #undef _
     default:
-      nat_log_info ("unknown protocol");
+      nat_elog_info ("unknown protocol");
       return;
     }
 }
@@ -2478,7 +2480,7 @@ nat_set_outside_address_and_port (snat_address_t * addresses,
 	  foreach_snat_protocol
 #undef _
 	default:
-	  nat_log_info ("unknown protocol");
+	  nat_elog_info ("unknown protocol");
 	  return 1;
 	}
     }
@@ -2585,7 +2587,7 @@ snat_static_mapping_match (snat_main_t * sm,
 						match.protocol, match.port,
 						tmp[lo], m->affinity,
 						m->affinity_per_service_list_head_index))
-		nat_log_info ("create affinity record failed");
+		nat_elog_info ("create affinity record failed");
 	    }
 	  vec_free (tmp);
 	}
@@ -2691,7 +2693,7 @@ nat_alloc_addr_and_port_default (snat_address_t * addresses,
 	  foreach_snat_protocol
 #undef _
 	default:
-	  nat_log_info ("unknown protocol");
+	  nat_elog_info ("unknown protocol");
 	  return 1;
 	}
 
@@ -2722,7 +2724,7 @@ nat_alloc_addr_and_port_default (snat_address_t * addresses,
 	  foreach_snat_protocol
 #undef _
 	default:
-	  nat_log_info ("unknown protocol");
+	  nat_elog_info ("unknown protocol");
 	  return 1;
 	}
     }
@@ -2772,7 +2774,7 @@ nat_alloc_addr_and_port_mape (snat_address_t * addresses,
       foreach_snat_protocol
 #undef _
     default:
-      nat_log_info ("unknown protocol");
+      nat_elog_info ("unknown protocol");
       return 1;
     }
 
@@ -2820,7 +2822,7 @@ nat_alloc_addr_and_port_range (snat_address_t * addresses,
       foreach_snat_protocol
 #undef _
     default:
-      nat_log_info ("unknown protocol");
+      nat_elog_info ("unknown protocol");
       return 1;
     }
 
@@ -3239,7 +3241,7 @@ nat_ha_sadd_cb (ip4_address_t * in_addr, u16 in_port,
   kv.key = key.as_u64;
   kv.value = s - tsm->sessions;
   if (clib_bihash_add_del_8_8 (&tsm->out2in, &kv, 1))
-    nat_log_warn ("out2in key add failed");
+    nat_elog_warn ("out2in key add failed");
 
   key.addr.as_u32 = in_addr->as_u32;
   key.port = in_port;
@@ -3247,7 +3249,7 @@ nat_ha_sadd_cb (ip4_address_t * in_addr, u16 in_port,
   s->in2out = key;
   kv.key = key.as_u64;
   if (clib_bihash_add_del_8_8 (&tsm->in2out, &kv, 1))
-    nat_log_warn ("in2out key add failed");
+    nat_elog_warn ("in2out key add failed");
 }
 
 void
@@ -3413,12 +3415,12 @@ nat_ha_sadd_ed_cb (ip4_address_t * in_addr, u16 in_port,
 	      snat_proto_to_ip_proto (proto), fib_index, in_port,
 	      s->ext_host_nat_port);
   if (clib_bihash_add_del_16_8 (&tsm->in2out_ed, &kv, 1))
-    nat_log_warn ("in2out key add failed");
+    nat_elog_warn ("in2out key add failed");
 
   make_ed_kv (&kv, out_addr, eh_addr, snat_proto_to_ip_proto (proto),
 	      s->out2in.fib_index, out_port, eh_port);
   if (clib_bihash_add_del_16_8 (&tsm->out2in_ed, &kv, 1))
-    nat_log_warn ("out2in key add failed");
+    nat_elog_warn ("out2in key add failed");
 }
 
 void
@@ -3771,7 +3773,7 @@ match:
 				rp->proto, !is_delete, rp->twice_nat,
 				rp->out2in_only, rp->tag, rp->identity_nat);
   if (rv)
-    nat_log_notice ("snat_add_static_mapping returned %d", rv);
+    nat_elog_notice_X1 ("snat_add_static_mapping returned %d", "i4", rv);
 }
 
 static void
@@ -3842,7 +3844,8 @@ match:
 					    rp->out2in_only, rp->tag,
 					    rp->identity_nat);
 	      if (rv)
-		nat_log_notice ("snat_add_static_mapping returned %d", rv);
+		nat_elog_notice_X1 ("snat_add_static_mapping returned %d",
+				    "i4", rv);
 	    }
 	}
       return;
