@@ -82,38 +82,6 @@ STATIC_ASSERT (sizeof (nat_buffer_opaque_t) <=
   ((nat_buffer_opaque_t *)((u8 *)((b)->opaque) + \
     STRUCT_OFFSET_OF (vnet_buffer_opaque_t, unused)))*/
 
-/* session key (4-tuple) */
-typedef struct
-{
-  union
-  {
-    struct
-    {
-      ip4_address_t addr;
-      u16 port;
-      u16 protocol:3, fib_index:13;
-    };
-    u64 as_u64;
-  };
-} snat_session_key_t;
-
-/* endpoint-dependent session key (6-tuple) */
-typedef struct
-{
-  union
-  {
-    struct
-    {
-      ip4_address_t l_addr;
-      ip4_address_t r_addr;
-      u32 proto:8, fib_index:24;
-      u16 l_port;
-      u16 r_port;
-    };
-    u64 as_u64[2];
-  };
-} nat_ed_ses_key_t;
-
 /* deterministic session outside key */
 typedef struct
 {
@@ -128,20 +96,6 @@ typedef struct
     u64 as_u64;
   };
 } snat_det_out_key_t;
-
-/* user (internal host) key */
-typedef struct
-{
-  union
-  {
-    struct
-    {
-      ip4_address_t addr;
-      u32 fib_index;
-    };
-    u64 as_u64;
-  };
-} snat_user_key_t;
 
 typedef struct
 {
@@ -298,60 +252,6 @@ typedef enum
 #define NAT_STATIC_MAPPING_FLAG_OUT2IN_ONLY  2
 #define NAT_STATIC_MAPPING_FLAG_IDENTITY_NAT 4
 #define NAT_STATIC_MAPPING_FLAG_LB           8
-
-/* *INDENT-OFF* */
-typedef CLIB_PACKED(struct
-{
-  /* Outside network key */
-  snat_session_key_t out2in;
-
-  /* Inside network key */
-  snat_session_key_t in2out;
-
-  /* Flags */
-  u32 flags;
-
-  /* Per-user translations */
-  u32 per_user_index;
-  u32 per_user_list_head_index;
-
-  /* Last heard timer */
-  f64 last_heard;
-
-  /* Last HA refresh */
-  f64 ha_last_refreshed;
-
-  /* Counters */
-  u64 total_bytes;
-  u32 total_pkts;
-
-  /* External host address and port */
-  ip4_address_t ext_host_addr;
-  u16 ext_host_port;
-
-  /* External host address and port after translation */
-  ip4_address_t ext_host_nat_addr;
-  u16 ext_host_nat_port;
-
-  /* TCP session state */
-  u8 state;
-  u32 i2o_fin_seq;
-  u32 o2i_fin_seq;
-
-  /* user index */
-  u32 user_index;
-}) snat_session_t;
-/* *INDENT-ON* */
-
-
-typedef struct
-{
-  ip4_address_t addr;
-  u32 fib_index;
-  u32 sessions_per_user_list_head_index;
-  u32 nsessions;
-  u32 nstaticsessions;
-} snat_user_t;
 
 typedef struct
 {

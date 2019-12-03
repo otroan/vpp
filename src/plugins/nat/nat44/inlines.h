@@ -21,6 +21,15 @@
 #include <vnet/fib/ip4_fib.h>
 #include <nat/nat.h>
 
+static_always_inline u8
+maximum_sessions_exceeded (snat_main_t * sm, u32 thread_index)
+{
+  if (pool_elts (sm->per_thread_data[thread_index].sessions) >=
+      sm->max_translations)
+    return 1;
+  return 0;
+}
+
 static_always_inline void
 nat44_session_cleanup (snat_session_t * s, u32 thread_index)
 {
