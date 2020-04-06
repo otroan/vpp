@@ -113,9 +113,12 @@ nat44_user_del_sessions (snat_user_t * u, u32 thread_index)
       s = pool_elt_at_index (tsm->sessions, elt->value);
       elt = pool_elt_at_index (tsm->list_pool, elt->next);
 
+      // TODO: cleanup of this call (refactor for ED NAT44 only)
       nat44_free_session_data (sm, s, thread_index, 0);
-      // TODO: needs refactoring as in nat44_user_session_cleanup
-      nat44_delete_session (sm, s, thread_index);
+
+      clib_dlist_remove (tsm->list_pool, s->per_user_index);
+      pool_put_index (tsm->list_pool, s->per_user_index);
+      pool_put (tsm->sessions, s);
     }
 }
 
@@ -144,6 +147,8 @@ nat44_user_del (ip4_address_t * addr, u32 fib_index)
               nat44_user_del_sessions (
                   pool_elt_at_index (tsm->users, value.value),
                   tsm->thread_index);
+              vlib_set_simple_counter (&sm->total_sessions,
+                  tsm->thread_index, 0, pool_elts (tsm->sessions));
               rv = 0;
               break;
             }
@@ -158,6 +163,8 @@ nat44_user_del (ip4_address_t * addr, u32 fib_index)
 	  nat44_user_del_sessions (pool_elt_at_index
 				   (tsm->users, value.value),
 				   tsm->thread_index);
+	  vlib_set_simple_counter (&sm->total_sessions, tsm->thread_index, 0,
+				   pool_elts (tsm->sessions));
 	  rv = 0;
 	}
     }
@@ -175,9 +182,9 @@ nat44_user_session_cleanup (snat_user_t * u, u32 thread_index, f64 now)
   snat_main_t *sm = &snat_main;
   snat_main_per_thread_data_t *tsm = &sm->per_thread_data[thread_index];
 
-  if (now < u->min_session_timeout)
+  if (now < u->partial_cleanup_timeout)
     goto done;
-  u->min_session_timeout = now + sm->min_timeout;
+  u->partial_cleanup_timeout = now + sm->min_timeout;
 
   // get head
   elt = pool_elt_at_index (tsm->list_pool,
@@ -202,22 +209,22 @@ nat44_user_session_cleanup (snat_user_t * u, u32 thread_index, f64 now)
       if (now < sess_timeout_time)
 	continue;
 
-      // do cleanup of this call (refactor for ED NAT44 only)
-      nat44_free_session_data (sm, s, thread_index, 0);
-
-      clib_dlist_remove (tsm->list_pool, s->per_user_index);
-      pool_put_index (tsm->list_pool, s->per_user_index);
-      pool_put (tsm->sessions, s);
-      vlib_set_simple_counter (&sm->total_sessions, thread_index, 0,
-			       pool_elts (tsm->sessions));
-
       if (snat_is_session_static (s))
 	u->nstaticsessions--;
       else
 	u->nsessions--;
 
+      // TODO: cleanup of this call (refactor for ED NAT44 only)
+      nat44_free_session_data (sm, s, thread_index, 0);
+
+      clib_dlist_remove (tsm->list_pool, s->per_user_index);
+      pool_put_index (tsm->list_pool, s->per_user_index);
+      pool_put (tsm->sessions, s);
+
       cleared++;
     }
+  tsm->cleared += cleared;
+  tsm->partial_cleanup_runs++;
 done:
   return cleared;
 }
@@ -238,11 +245,9 @@ nat44_users_cleanup (u32 thread_index, f64 now)
 
   tsm = vec_elt_at_index (sm->per_thread_data, thread_index);
 
-  if (now < tsm->min_session_timeout)
+  if (now < tsm->full_cleanup_timeout)
     goto done;
-  tsm->min_session_timeout = now + sm->min_timeout;
-  // consider
-  tsm->cleanup_timeout = tsm->min_session_timeout;
+  tsm->full_cleanup_timeout = now + sm->min_timeout;
 
   pool_index = ~0;
   do
@@ -272,23 +277,50 @@ nat44_users_cleanup (u32 thread_index, f64 now)
 	}
     }
   while (1);
-  tsm->cleared += cleared;
-  tsm->cleanup_runs++;
+  tsm->full_cleanup_runs++;
+
+  if (PREDICT_TRUE (cleared))
+    vlib_set_simple_counter (&sm->total_sessions, thread_index, 0,
+			     pool_elts (tsm->sessions));
 done:
   return cleared;
 }
 
 static_always_inline u32
-nat44_out_of_ports_cleanup (u32 thread_index, f64 now)
+nat44_partial_scavenging (snat_user_t * u, u32 thread_index, f64 now)
 {
-  return nat44_users_cleanup (thread_index, now);
+  snat_main_t *sm = &snat_main;
+  snat_main_per_thread_data_t *tsm;
+  u32 cleared = 0;
+
+  if (PREDICT_TRUE (sm->do_scavenging))
+    {
+      cleared = nat44_user_session_cleanup (u, thread_index, now);
+      tsm = vec_elt_at_index (sm->per_thread_data, thread_index);
+
+      if (PREDICT_FALSE (cleared))
+	{
+	  vlib_set_simple_counter (&sm->total_sessions, thread_index, 0,
+				   pool_elts (tsm->sessions));
+	  nat_log_notice ("partial scavenging cleared %u at %f", cleared,
+			  now);
+	}
+    }
+  return cleared;
 }
 
 static_always_inline u32
-nat44_max_translations_per_user_cleanup (snat_user_t * u, u32 thread_index,
-					 f64 now)
+nat44_full_scavenging (u32 thread_index, f64 now)
 {
-  return nat44_user_session_cleanup (u, thread_index, now);
+  snat_main_t *sm = &snat_main;
+  u32 cleared = 0;
+  if (PREDICT_TRUE (sm->do_scavenging))
+    {
+      cleared = nat44_users_cleanup (thread_index, now);
+      if (PREDICT_FALSE (cleared))
+	nat_log_notice ("full scavenging cleared %u at %f", cleared, now);
+    }
+  return cleared;
 }
 
 static_always_inline u32
