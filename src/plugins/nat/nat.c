@@ -2569,7 +2569,7 @@ snat_init (vlib_main_t * vm)
       snat_set_workers (bitmap);
       clib_bitmap_free (bitmap);
     }
-  else
+  elsj
     {
       sm->per_thread_data[0].snat_thread_index = 0;
     }
@@ -2581,12 +2581,10 @@ snat_init (vlib_main_t * vm)
   /* Set up the interface address add/del callback */
   cb4.function = snat_ip4_add_del_interface_address_cb;
   cb4.function_opaque = 0;
-
   vec_add1 (im->add_del_interface_address_callbacks, cb4);
 
   cb4.function = nat_ip4_add_del_addr_only_sm_cb;
   cb4.function_opaque = 0;
-
   vec_add1 (im->add_del_interface_address_callbacks, cb4);
 
   nat_dpo_module_init ();
@@ -4184,6 +4182,16 @@ match:
     nat_elog_notice_X1 ("snat_add_static_mapping returned %d", "i4", rv);
 }
 
+static_always_inline int
+vec_has_index (u32 * vec, u32 index)
+{
+  int i;
+  for (i = 0; i < vec_len (vec); i++)
+    if (index == vec[i])
+      return 0;
+  return 1;
+}
+
 static void
 snat_ip4_add_del_interface_address_cb (ip4_main_t * im,
 				       uword opaque,
@@ -4194,31 +4202,39 @@ snat_ip4_add_del_interface_address_cb (ip4_main_t * im,
 {
   snat_main_t *sm = &snat_main;
   snat_static_map_resolve_t *rp;
+  snat_address_t *addresses;
   ip4_address_t l_addr;
-  int i, j;
-  int rv;
-  u8 twice_nat = 0;
-  snat_address_t *addresses = sm->addresses;
+  u8 twice_nat;
+  int i, rv;
 
-  for (i = 0; i < vec_len (sm->auto_add_sw_if_indices); i++)
+  // first determine if we care about this interface
+  if (vec_has_index (&sm->auto_add_sw_if_indices, sw_if_index))
     {
-      if (sw_if_index == sm->auto_add_sw_if_indices[i])
-	goto match;
+      twice_nat = 0;
+      addresses = sm->addresses;
     }
-
-  for (i = 0; i < vec_len (sm->auto_add_sw_if_indices_twice_nat); i++)
+  else if (vec_has_index (&sm->auto_add_sw_if_indices_twice_nat, sw_if_index))
     {
       twice_nat = 1;
-      addresses = sm->twice_nat_addresses;
-      if (sw_if_index == sm->auto_add_sw_if_indices_twice_nat[i])
-	goto match;
+      addressess = sm->twice_nat_addresses;
+    }
+  else
+    {
+      return;
     }
 
-  return;
+  for (i = 0; i < vec_len (addressess); i++)
+    {
+      if (addresses[i].addr.as_u32 == address->as_u32)
+        {
 
-match:
+        }
+    }
+
   if (!is_delete)
     {
+      // TODO: this doesn't work right now...
+      // if the address is already there ignore request
       /* Don't trip over lease renewal, static config */
       for (j = 0; j < vec_len (addresses); j++)
 	if (addresses[j].addr.as_u32 == address->as_u32)
@@ -4256,12 +4272,20 @@ match:
 				    "i4", rv);
 	    }
 	}
-      return;
     }
   else
     {
+      // TODO: this calls makes sessions beeing deleted
+      // TODO: logic needs to be fixed
+
+      // current behavior:
+      // delete static mappings + (may/may not) be twice_nat address
+      //
+      // One interface address that is matched against:
+      // vec sm->auto_add_sw_if_indices
+      // vec sm->auto_add_sw_if_indices_twice_nat
+
       (void) snat_del_address (sm, address[0], 1, twice_nat);
-      return;
     }
 }
 
