@@ -87,6 +87,91 @@ nat44_session_alloc_new (snat_main_per_thread_data_t * tsm, snat_user_t * u,
   return s;
 }
 
+
+static_always_inline void
+nat44_db_reset (snat_main_per_thread_data_t * tsm)
+{
+
+  nat44_ed_db_free (tsm);
+  nat44_ed_db_init (tsm);
+  /*
+     snat_main_t *sm = &snat_main;
+
+     // TODO:
+     // 1) drop users
+     //  - users are in pool
+     // 2) cleanup hash tables
+     // tsm->users snat_user_t
+     // tsm->user_hash
+
+     // free all pools
+     pool_free (tsm->sessions);
+     // clib_dlist_init - done only in user part
+     pool_free (tsm->list_pool);
+     pool_free (tsm->global_lru_pool);
+
+     // free all hashes
+     clib_bihash_free_16_8 (&tsm->in2out_ed);
+     clib_bihash_free_16_8 (&tsm->out2in_ed);
+     clib_bihash_free_16_8 (&tsm->ed_ext_ports);
+     // to be removed
+     clib_bihash_free_8_8 (&tsm->user_hash);
+
+     pool_alloc (tsm->sessions, sm->max_translations);
+     pool_alloc (tsm->list_pool, sm->max_translations);
+     pool_alloc (tsm->global_lru_pool, sm->max_translations);
+
+     dlist_elt_t *head;
+     pool_get (tsm->global_lru_pool, head);
+     tsm->global_lru_head_index = head - tsm->global_lru_pool;
+     clib_dlist_init (tsm->global_lru_pool,
+     tsm->global_lru_head_index);
+
+     // reinitialize bihashes
+     clib_bihash_init_16_8 (&tsm->in2out_ed, "in2out-ed",
+     sm->translation_buckets,
+     sm->translation_memory_size);
+     clib_bihash_set_kvp_format_fn_16_8 (&tsm->in2out_ed,
+     format_ed_session_kvp);
+
+     clib_bihash_init_16_8 (&tsm->out2in_ed, "out2in-ed",
+     sm->translation_buckets,
+     sm->translation_memory_size);
+     clib_bihash_set_kvp_format_fn_16_8 (&tsm->out2in_ed,
+     format_ed_session_kvp);
+
+     clib_bihash_init_16_8 (&tsm->ed_ext_ports, "ed-nat-5-tuple-port-overload-hash",
+     sm->translation_buckets, sm->translation_memory_size);
+
+     clib_bihash_init_8_8 (&tsm->user_hash, "users", sm->user_buckets,
+     sm->user_memory_size);
+     clib_bihash_set_kvp_format_fn_8_8 (&tsm->user_hash,
+     format_user_kvp);
+   */
+}
+
+static_always_inline void
+nat44_sessions_clear ()
+{
+  snat_main_t *sm = &snat_main;
+  snat_main_per_thread_data_t *tsm;
+
+  if (sm->num_workers > 1)
+    {
+      /* *INDENT-OFF* */
+      vec_foreach (tsm, sm->per_thread_data)
+        {
+          nat44_db_reset (tsm);
+        }
+      /* *INDENT-ON* */
+    }
+  else
+    {
+      tsm = vec_elt_at_index (sm->per_thread_data, sm->num_workers);
+      nat44_db_reset (tsm);
+    }
+}
+
 static_always_inline void
 nat44_user_del_sessions (snat_user_t * u, u32 thread_index)
 {

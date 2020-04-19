@@ -1334,6 +1334,21 @@ void nat_free_session_data (snat_main_t * sm, snat_session_t * s,
 void
 nat44_free_session_data (snat_main_t * sm, snat_session_t * s,
 			 u32 thread_index, u8 is_ha);
+
+/**
+ * @brief Initialize NAT44 ED data
+ *
+ * @param tsm          per thread data
+ */
+void nat44_ed_db_init (snat_main_per_thread_data_t * tsm);
+
+/**
+ * @brief Free NAT44 ED data
+ *
+ * @param tsm          per thread data
+ */
+void nat44_ed_db_free (snat_main_per_thread_data_t * tsm);
+
 /**
  * @brief Find or create NAT user
  *
