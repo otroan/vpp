@@ -91,6 +91,7 @@ vl_api_nat_control_ping_t_print (vl_api_nat_control_ping_t * mp, void *handle)
   FINISH;
 }
 
+// TODO: outdated
 static void
 vl_api_nat_show_config_t_handler (vl_api_nat_show_config_t * mp)
 {
@@ -98,13 +99,13 @@ vl_api_nat_show_config_t_handler (vl_api_nat_show_config_t * mp)
   snat_main_t *sm = &snat_main;
   int rv = 0;
 
+  clib_memset (rmp, 0, sizeof (*rmp));
+
   /* *INDENT-OFF* */
   REPLY_MACRO2 (VL_API_NAT_SHOW_CONFIG_REPLY,
   ({
     rmp->translation_buckets = htonl (sm->translation_buckets);
-    rmp->translation_memory_size = 0;
     rmp->user_buckets = htonl (sm->user_buckets);
-    rmp->user_memory_size = 0;
     rmp->max_translations_per_user = htonl (sm->max_translations_per_user);
     rmp->outside_vrf_id = htonl (sm->outside_vrf_id);
     rmp->inside_vrf_id = htonl (sm->inside_vrf_id);
@@ -113,13 +114,6 @@ vl_api_nat_show_config_t_handler (vl_api_nat_show_config_t * mp)
       sm->static_mapping_connection_tracking;
     rmp->endpoint_dependent = sm->endpoint_dependent;
     rmp->out2in_dpo = sm->out2in_dpo;
-    // these are obsolete
-    rmp->dslite_ce = 0;
-    rmp->deterministic = 0;
-    rmp->nat64_bib_buckets = 0;
-    rmp->nat64_bib_memory_size = 0;
-    rmp->nat64_st_buckets = 0;
-    rmp->nat64_st_memory_size = 0;
   }));
   /* *INDENT-ON* */
 }
@@ -134,6 +128,7 @@ vl_api_nat_show_config_t_print (vl_api_nat_show_config_t * mp, void *handle)
   FINISH;
 }
 
+// TODO: outdated
 static void
 vl_api_nat_show_config_2_t_handler (vl_api_nat_show_config_2_t * mp)
 {
@@ -141,13 +136,13 @@ vl_api_nat_show_config_2_t_handler (vl_api_nat_show_config_2_t * mp)
   snat_main_t *sm = &snat_main;
   int rv = 0;
 
+  clib_memset (rmp, 0, sizeof (*rmp));
+
   /* *INDENT-OFF* */
   REPLY_MACRO2 (VL_API_NAT_SHOW_CONFIG_2_REPLY,
   ({
     rmp->translation_buckets = htonl (sm->translation_buckets);
-    rmp->translation_memory_size = 0;
     rmp->user_buckets = htonl (sm->user_buckets);
-    rmp->user_memory_size = 0;
     rmp->max_translations_per_user = htonl (sm->max_translations_per_user);
     rmp->outside_vrf_id = htonl (sm->outside_vrf_id);
     rmp->inside_vrf_id = htonl (sm->inside_vrf_id);
@@ -158,13 +153,6 @@ vl_api_nat_show_config_2_t_handler (vl_api_nat_show_config_2_t * mp)
     rmp->out2in_dpo = sm->out2in_dpo;
     rmp->max_translations_per_thread = clib_net_to_host_u32(sm->max_translations_per_thread);
     rmp->max_users_per_thread = clib_net_to_host_u32(sm->max_users_per_thread);
-    // these are obsolete
-    rmp->dslite_ce = 0;
-    rmp->deterministic = 0;
-    rmp->nat64_bib_buckets = 0;
-    rmp->nat64_bib_memory_size = 0;
-    rmp->nat64_st_buckets = 0;
-    rmp->nat64_st_memory_size = 0;
   }));
   /* *INDENT-ON* */
 }
