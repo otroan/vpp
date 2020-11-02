@@ -2707,7 +2707,6 @@ static clib_error_t *
 nat_init (vlib_main_t * vm)
 {
   snat_main_t *sm = &snat_main;
-  clib_error_t *error = 0;
   vlib_thread_main_t *tm = vlib_get_thread_main ();
   vlib_thread_registration_t *tr;
   ip4_add_del_interface_address_callback_t cbi = { 0 };
@@ -2823,8 +2822,7 @@ nat_init (vlib_main_t * vm)
   nat_ha_init (vm, sm->num_workers, num_threads);
 
   test_key_calc_split ();
-  error = snat_api_init (vm, sm);
-  return error;
+  return nat44_api_hookup (vm);
 }
 
 VLIB_INIT_FUNCTION (nat_init);
@@ -2878,18 +2876,14 @@ nat44_plugin_enable (nat44_config_t c)
   sm->mss_clamping = 0;
 
   if (!c.users)
-    {
-      c.users = 1024;
-    }
+    c.users = 1024;
+
   sm->max_users_per_thread = c.users;
   sm->user_buckets = nat_calc_bihash_buckets (c.users);
 
   if (!c.sessions)
-    {
-      // default value based on legacy setting of load factor 10 * default
-      // translation buckets 1024
-      c.sessions = 10 * 1024;
-    }
+    c.sessions = 10 * 1024;
+
   sm->max_translations_per_thread = c.sessions;
   sm->translation_buckets = nat_calc_bihash_buckets (c.sessions);
 
@@ -2917,6 +2911,8 @@ nat44_plugin_enable (nat44_config_t c)
       sm->icmp_match_out2in_cb = icmp_match_out2in_ed;
       sm->icmp_match_in2out_cb = icmp_match_in2out_ed;
 
+      // TODO: try to move it into nat44_db_init, static mapping
+      //       may require this ?
       clib_bihash_init_16_8 (&sm->out2in_ed, "out2in-ed",
 			     sm->translation_buckets, 0);
       clib_bihash_set_kvp_format_fn_16_8 (&sm->out2in_ed,
@@ -4368,7 +4364,11 @@ nat44_db_init (snat_main_per_thread_data_t * tsm)
 			     sm->translation_buckets, 0);
       clib_bihash_set_kvp_format_fn_16_8 (&tsm->in2out_ed,
 					  format_ed_session_kvp);
-
+      /*
+      clib_bihash_init_16_8 (&sm->out2in_ed, "out2in-ed",
+			     sm->translation_buckets, 0);
+      clib_bihash_set_kvp_format_fn_16_8 (&sm->out2in_ed,
+					  format_ed_session_kvp);*/
     }
   else
     {
