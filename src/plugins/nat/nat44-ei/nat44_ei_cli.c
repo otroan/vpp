@@ -178,13 +178,13 @@ nat44_ei_enable_command_fn (vlib_main_t *vm, unformat_input_t *input,
   u8 mode_set = 0;
 
   if (nm->enabled)
-    return clib_error_return (0, "nat44 ei already enabled");
+    return clib_error_return (0, "nat44-ei already enabled");
 
   /* Get a line of input. */
   if (!unformat_user (input, unformat_line_input, line_input))
     {
       if (nat44_ei_plugin_enable (c) != 0)
-	return clib_error_return (0, "nat44 ei enable failed");
+	return clib_error_return (0, "nat44-ei enable failed");
       return 0;
     }
 
@@ -229,7 +229,7 @@ nat44_ei_enable_command_fn (vlib_main_t *vm, unformat_input_t *input,
     }
 
   if (nat44_ei_plugin_enable (c) != 0)
-    error = clib_error_return (0, "nat44 ei enable failed");
+    error = clib_error_return (0, "nat44-ei enable failed");
 done:
   unformat_free (line_input);
   return error;
@@ -243,10 +243,10 @@ nat44_ei_disable_command_fn (vlib_main_t *vm, unformat_input_t *input,
   clib_error_t *error = 0;
 
   if (!nm->enabled)
-    return clib_error_return (0, "nat44 ei already disabled");
+    return clib_error_return (0, "nat44-ei already disabled");
 
   if (nat44_ei_plugin_disable () != 0)
-    error = clib_error_return (0, "nat44 ei disable failed");
+    error = clib_error_return (0, "nat44-ei disable failed");
 
   return error;
 }
@@ -1509,24 +1509,24 @@ nat_show_timeouts_command_fn (vlib_main_t *vm, unformat_input_t *input,
 
 /*?
  * @cliexpar
- * @cliexstart{nat44 ei enable}
- * Enable nat44 ei plugin
+ * @cliexstart{nat44-ei enable}
+ * Enable nat44-ei plugin
  * To enable nat44, use:
- *  vpp# nat44 ei enable sessions <n>
- * To enable nat44 ei static mapping only, use:
- *  vpp# nat44 ei enable sessions <n> static-mapping
- * To enable nat44 ei static mapping with connection tracking, use:
- *  vpp# nat44 ei enable sessions <n> static-mapping connection-tracking
- * To enable nat44 ei out2in dpo, use:
- *  vpp# nat44 ei enable sessions <n> out2in-dpo
+ *  vpp# nat44-ei enable sessions <n>
+ * To enable nat44-ei static mapping only, use:
+ *  vpp# nat44-ei enable sessions <n> static-mapping
+ * To enable nat44-ei static mapping with connection tracking, use:
+ *  vpp# nat44-ei enable sessions <n> static-mapping connection-tracking
+ * To enable nat44-ei out2in dpo, use:
+ *  vpp# nat44-ei enable sessions <n> out2in-dpo
  * To set inside-vrf outside-vrf, use:
- *  vpp# nat44 ei enable sessions <n> inside-vrf <id> outside-vrf <id>
+ *  vpp# nat44-ei enable sessions <n> inside-vrf <id> outside-vrf <id>
  * @cliexend
 ?*/
 VLIB_CLI_COMMAND (nat44_ei_enable_command, static) = {
-  .path = "nat44 ei enable",
+  .path = "nat44-ei enable",
   .short_help =
-    "nat44 ei enable sessions <max-number> [users <max-number>] "
+    "nat44-ei enable sessions <max-number> [users <max-number>] "
     "[static-mappig-only [connection-tracking]|out2in-dpo] [inside-vrf "
     "<vrf-id>] [outside-vrf <vrf-id>] [user-sessions <max-number>]",
   .function = nat44_ei_enable_command_fn,
@@ -1534,69 +1534,69 @@ VLIB_CLI_COMMAND (nat44_ei_enable_command, static) = {
 
 /*?
  * @cliexpar
- * @cliexstart{nat44 ei disable}
- * Disable nat44 ei plugin
+ * @cliexstart{nat44-ei disable}
+ * Disable nat44-ei plugin
  * To disable nat44, use:
- *  vpp# nat44 ei disable
+ *  vpp# nat44-ei disable
  * @cliexend
 ?*/
 VLIB_CLI_COMMAND (nat44_ei_disable_command, static) = {
-  .path = "nat44 ei disable",
-  .short_help = "nat44 ei disable",
+  .path = "nat44-ei disable",
+  .short_help = "nat44-ei disable",
   .function = nat44_ei_disable_command_fn,
 };
 
 /*?
  * @cliexpar
- * @cliexstart{set snat44 ei workers}
+ * @cliexstart{set snat44-ei workers}
  * Set NAT workers if 2 or more workers available, use:
- *  vpp# set snat44 ei workers 0-2,5
+ *  vpp# set snat44-ei workers 0-2,5
  * @cliexend
 ?*/
 VLIB_CLI_COMMAND (set_workers_command, static) = {
-  .path = "set nat44 ei workers",
+  .path = "set nat44-ei workers",
   .function = set_workers_command_fn,
-  .short_help = "set nat44 ei workers <workers-list>",
+  .short_help = "set nat44-ei workers <workers-list>",
 };
 
 /*?
  * @cliexpar
- * @cliexstart{show nat44 ei workers}
+ * @cliexstart{show nat44-ei workers}
  * Show NAT workers.
- *  vpp# show nat44 ei workers:
+ *  vpp# show nat44-ei workers:
  *  2 workers
  *    vpp_wk_0
  *    vpp_wk_1
  * @cliexend
 ?*/
 VLIB_CLI_COMMAND (nat_show_workers_command, static) = {
-  .path = "show nat44 ei workers",
-  .short_help = "show nat44 ei workers",
+  .path = "show nat44-ei workers",
+  .short_help = "show nat44-ei workers",
   .function = nat_show_workers_commnad_fn,
 };
 
 /*?
  * @cliexpar
- * @cliexstart{set nat44 ei timeout}
+ * @cliexstart{set nat44-ei timeout}
  * Set values of timeouts for NAT sessions (in seconds), use:
- *  vpp# set nat44 ei timeout udp 120 tcp-established 7500 tcp-transitory 250
+ *  vpp# set nat44-ei timeout udp 120 tcp-established 7500 tcp-transitory 250
 icmp 90
  * To reset default values use:
- *  vpp# set nat44 ei timeout reset
+ *  vpp# set nat44-ei timeout reset
  * @cliexend
 ?*/
 VLIB_CLI_COMMAND (set_timeout_command, static) = {
-  .path = "set nat44 ei timeout",
+  .path = "set nat44-ei timeout",
   .function = set_timeout_command_fn,
-  .short_help = "set nat44 ei timeout [udp <sec> | tcp-established <sec> "
+  .short_help = "set nat44-ei timeout [udp <sec> | tcp-established <sec> "
 		"tcp-transitory <sec> | icmp <sec> | reset]",
 };
 
 /*?
  * @cliexpar
- * @cliexstart{show nat44 ei timeouts}
+ * @cliexstart{show nat44-ei timeouts}
  * Show values of timeouts for NAT sessions.
- * vpp# show nat44 ei timeouts
+ * vpp# show nat44-ei timeouts
  * udp timeout: 300sec
  * tcp-established timeout: 7440sec
  * tcp-transitory timeout: 240sec
@@ -1604,196 +1604,196 @@ VLIB_CLI_COMMAND (set_timeout_command, static) = {
  * @cliexend
 ?*/
 VLIB_CLI_COMMAND (nat_show_timeouts_command, static) = {
-  .path = "show nat44 ei timeouts",
-  .short_help = "show nat44 ei timeouts",
+  .path = "show nat44-ei timeouts",
+  .short_help = "show nat44-ei timeouts",
   .function = nat_show_timeouts_command_fn,
 };
 
 /*?
  * @cliexpar
- * @cliexstart{nat44 ei set logging level}
+ * @cliexstart{set nat44-ei logging level}
  * To set NAT logging level use:
- * Set nat44 ei logging level
+ * Set nat44-ei logging level
  * @cliexend
 ?*/
 VLIB_CLI_COMMAND (nat44_ei_set_log_level_command, static) = {
-  .path = "nat44 ei set logging level",
+  .path = "set nat44-ei logging level",
   .function = nat44_ei_set_log_level_command_fn,
-  .short_help = "nat44 ei set logging level <level>",
+  .short_help = "set nat44-ei logging level <level>",
 };
 
 /*?
  * @cliexpar
- * @cliexstart{snat44 ei ipfix logging}
+ * @cliexstart{snat44-ei ipfix logging}
  * To enable NAT IPFIX logging use:
- *  vpp# nat44 ei ipfix logging
+ *  vpp# nat44-ei ipfix logging
  * To set IPFIX exporter use:
  *  vpp# set ipfix exporter collector 10.10.10.3 src 10.10.10.1
  * @cliexend
 ?*/
 VLIB_CLI_COMMAND (nat44_ei_ipfix_logging_enable_disable_command, static) = {
-  .path = "nat44 ei ipfix logging",
+  .path = "nat44-ei ipfix logging",
   .function = nat44_ei_ipfix_logging_enable_disable_command_fn,
   .short_help =
-    "nat44 ei ipfix logging [domain <domain-id>] [src-port <port>] [disable]",
+    "nat44-ei ipfix logging [domain <domain-id>] [src-port <port>] [disable]",
 };
 
 /*?
  * @cliexpar
- * @cliexstart{nat44 ei addr-port-assignment-alg}
+ * @cliexstart{set nat44-ei addr-port-assignment-alg}
  * Set address and port assignment algorithm
  * For the MAP-E CE limit port choice based on PSID use:
- *  vpp# nat44 ei addr-port-assignment-alg map-e psid 10 psid-offset 6 psid-len
+ *  vpp# nat44-ei addr-port-assignment-alg map-e psid 10 psid-offset 6 psid-len
 6
  * For port range use:
- *  vpp# nat44 ei addr-port-assignment-alg port-range <start-port> - <end-port>
+ *  vpp# set nat44-ei addr-port-assignment-alg port-range <start-port> - <end-port>
  * To set standard (default) address and port assignment algorithm use:
- *  vpp# nat44 ei addr-port-assignment-alg default
+ *  vpp# set nat44-ei addr-port-assignment-alg default
  * @cliexend
 ?*/
 VLIB_CLI_COMMAND (nat44_ei_set_alloc_addr_and_port_alg_command, static) = {
-  .path = "nat44 ei addr-port-assignment-alg",
-  .short_help = "nat44 ei addr-port-assignment-alg <alg-name> [<alg-params>]",
+  .path = "set nat44-ei addr-port-assignment-alg",
+  .short_help = "set nat44-ei addr-port-assignment-alg <alg-name> [<alg-params>]",
   .function = nat44_ei_set_alloc_addr_and_port_alg_command_fn,
 };
 
 /*?
  * @cliexpar
- * @cliexstart{show nat44 ei addr-port-assignment-alg}
+ * @cliexstart{show nat44-ei addr-port-assignment-alg}
  * Show address and port assignment algorithm
  * @cliexend
 ?*/
 VLIB_CLI_COMMAND (nat44_ei_show_alloc_addr_and_port_alg_command, static) = {
-  .path = "show nat44 ei addr-port-assignment-alg",
-  .short_help = "show nat44 ei addr-port-assignment-alg",
+  .path = "show nat44-ei addr-port-assignment-alg",
+  .short_help = "show nat44-ei addr-port-assignment-alg",
   .function = nat44_ei_show_alloc_addr_and_port_alg_command_fn,
 };
 
 /*?
  * @cliexpar
- * @cliexstart{nat44 ei mss-clamping}
+ * @cliexstart{nat44-ei mss-clamping}
  * Set TCP MSS rewriting configuration
  * To enable TCP MSS rewriting use:
- *  vpp# nat44 ei mss-clamping 1452
+ *  vpp# nat44-ei mss-clamping 1452
  * To disbale TCP MSS rewriting use:
- *  vpp# nat44 ei mss-clamping disable
+ *  vpp# nat44-ei mss-clamping disable
  * @cliexend
 ?*/
 VLIB_CLI_COMMAND (nat_set_mss_clamping_command, static) = {
-  .path = "nat44 ei mss-clamping",
-  .short_help = "nat44 ei mss-clamping <mss-value>|disable",
+  .path = "nat44-ei mss-clamping",
+  .short_help = "nat44-ei mss-clamping <mss-value>|disable",
   .function = nat_set_mss_clamping_command_fn,
 };
 
 /*?
  * @cliexpar
- * @cliexstart{show nat44 ei mss-clamping}
+ * @cliexstart{show nat44-ei mss-clamping}
  * Show TCP MSS rewriting configuration
  * @cliexend
 ?*/
 VLIB_CLI_COMMAND (nat_show_mss_clamping_command, static) = {
-  .path = "show nat44 ei mss-clamping",
-  .short_help = "show nat44 ei mss-clamping",
+  .path = "show nat44-ei mss-clamping",
+  .short_help = "show nat44-ei mss-clamping",
   .function = nat_show_mss_clamping_command_fn,
 };
 
 /*?
  * @cliexpar
- * @cliexstart{nat44 ei ha failover}
+ * @cliexstart{set nat44-ei ha failover}
  * Set HA failover (remote settings)
  * @cliexend
 ?*/
 VLIB_CLI_COMMAND (nat_ha_failover_command, static) = {
-  .path = "nat44 ei ha failover",
+  .path = "set nat44-ei ha failover",
   .short_help =
-    "nat44 ei ha failover <ip4-address>:<port> [refresh-interval <sec>]",
+    "set nat44-ei ha failover <ip4-address>:<port> [refresh-interval <sec>]",
   .function = nat_ha_failover_command_fn,
 };
 
 /*?
  * @cliexpar
- * @cliexstart{nat44 ei ha listener}
+ * @cliexstart{set nat44-ei ha listener}
  * Set HA listener (local settings)
  * @cliexend
 ?*/
 VLIB_CLI_COMMAND (nat_ha_listener_command, static) = {
-  .path = "nat44 ei ha listener",
+  .path = "set nat44-ei ha listener",
   .short_help =
-    "nat44 ei ha listener <ip4-address>:<port> [path-mtu <path-mtu>]",
+    "set nat44-ei ha listener <ip4-address>:<port> [path-mtu <path-mtu>]",
   .function = nat_ha_listener_command_fn,
 };
 
 /*?
  * @cliexpar
- * @cliexstart{show nat44 ei ha}
+ * @cliexstart{show nat44-ei ha}
  * Show HA configuration/status
  * @cliexend
 ?*/
 VLIB_CLI_COMMAND (nat_show_ha_command, static) = {
-  .path = "show nat44 ei ha",
-  .short_help = "show nat44 ei ha",
+  .path = "show nat44-ei ha",
+  .short_help = "show nat44-ei ha",
   .function = nat_show_ha_command_fn,
 };
 
 /*?
  * @cliexpar
- * @cliexstart{nat44 ei ha flush}
+ * @cliexstart{nat44-ei ha flush}
  * Flush the current HA data (for testing)
  * @cliexend
 ?*/
 VLIB_CLI_COMMAND (nat_ha_flush_command, static) = {
-  .path = "nat44 ei ha flush",
-  .short_help = "nat44 ei ha flush",
+  .path = "nat44-ei ha flush",
+  .short_help = "nat44-ei ha flush",
   .function = nat_ha_flush_command_fn,
 };
 
 /*?
  * @cliexpar
- * @cliexstart{nat44 ei ha resync}
+ * @cliexstart{nat44-ei ha resync}
  * Resync HA (resend existing sessions to new failover)
  * @cliexend
 ?*/
 VLIB_CLI_COMMAND (nat_ha_resync_command, static) = {
-  .path = "nat44 ei ha resync",
-  .short_help = "nat44 ei ha resync",
+  .path = "nat44-ei ha resync",
+  .short_help = "nat44-ei ha resync",
   .function = nat_ha_resync_command_fn,
 };
 
 /*?
  * @cliexpar
- * @cliexstart{show nat44 ei hash tables}
+ * @cliexstart{show nat44-ei hash tables}
  * Show NAT44 hash tables
  * @cliexend
 ?*/
 VLIB_CLI_COMMAND (nat44_ei_show_hash, static) = {
-  .path = "show nat44 ei hash tables",
-  .short_help = "show nat44 ei hash tables [detail|verbose]",
+  .path = "show nat44-ei hash tables",
+  .short_help = "show nat44-ei hash tables [detail|verbose]",
   .function = nat44_ei_show_hash_command_fn,
 };
 
 /*?
  * @cliexpar
- * @cliexstart{nat44 ei add address}
+ * @cliexstart{nat44-ei add address}
  * Add/delete NAT44 pool address.
  * To add NAT44 pool address use:
- *  vpp# nat44 ei add address 172.16.1.3
- *  vpp# nat44 ei add address 172.16.2.2 - 172.16.2.24
+ *  vpp# nat44-ei add address 172.16.1.3
+ *  vpp# nat44-ei add address 172.16.2.2 - 172.16.2.24
  * To add NAT44 pool address for specific tenant (identified by VRF id) use:
- *  vpp# nat44 ei add address 172.16.1.3 tenant-vrf 10
+ *  vpp# nat44-ei add address 172.16.1.3 tenant-vrf 10
  * @cliexend
 ?*/
 VLIB_CLI_COMMAND (add_address_command, static) = {
-  .path = "nat44 ei add address",
-  .short_help = "nat44 ei add address <ip4-range-start> [- <ip4-range-end>] "
+  .path = "nat44-ei add address",
+  .short_help = "nat44-ei add address <ip4-range-start> [- <ip4-range-end>] "
 		"[tenant-vrf <vrf-id>] [del]",
   .function = add_address_command_fn,
 };
 
 /*?
  * @cliexpar
- * @cliexstart{show nat44 ei addresses}
+ * @cliexstart{show nat44-ei addresses}
  * Show NAT44 pool addresses.
- * vpp# show nat44 ei addresses
+ * vpp# show nat44-ei addresses
  * NAT44 pool addresses:
  * 172.16.2.2
  *   tenant VRF independent
@@ -1808,8 +1808,8 @@ VLIB_CLI_COMMAND (add_address_command, static) = {
  * @cliexend
 ?*/
 VLIB_CLI_COMMAND (nat44_ei_show_addresses_command, static) = {
-  .path = "show nat44 ei addresses",
-  .short_help = "show nat44 ei addresses",
+  .path = "show nat44-ei addresses",
+  .short_help = "show nat44-ei addresses",
   .function = nat44_ei_show_addresses_command_fn,
 };
 
@@ -1818,88 +1818,88 @@ VLIB_CLI_COMMAND (nat44_ei_show_addresses_command, static) = {
  * @cliexstart{set interface nat44}
  * Enable/disable NAT44 feature on the interface.
  * To enable NAT44 feature with local network interface use:
- *  vpp# set interface nat44 ei in GigabitEthernet0/8/0
+ *  vpp# set interface nat44-ei in GigabitEthernet0/8/0
  * To enable NAT44 feature with external network interface use:
- *  vpp# set interface nat44 ei out GigabitEthernet0/a/0
+ *  vpp# set interface nat44-ei out GigabitEthernet0/a/0
  * @cliexend
 ?*/
 VLIB_CLI_COMMAND (set_interface_nat44_ei_command, static) = {
-  .path = "set interface nat44 ei",
+  .path = "set interface nat44-ei",
   .function = nat44_ei_feature_command_fn,
   .short_help =
-    "set interface nat44 ei in <intfc> out <intfc> [output-feature] "
+    "set interface nat44-ei in <intfc> out <intfc> [output-feature] "
     "[del]",
 };
 
 /*?
  * @cliexpar
- * @cliexstart{show nat44 ei interfaces}
+ * @cliexstart{show nat44-ei interfaces}
  * Show interfaces with NAT44 feature.
- * vpp# show nat44 ei interfaces
+ * vpp# show nat44-ei interfaces
  * NAT44 interfaces:
  *  GigabitEthernet0/8/0 in
  *  GigabitEthernet0/a/0 out
  * @cliexend
 ?*/
 VLIB_CLI_COMMAND (nat44_ei_show_interfaces_command, static) = {
-  .path = "show nat44 ei interfaces",
-  .short_help = "show nat44 ei interfaces",
+  .path = "show nat44-ei interfaces",
+  .short_help = "show nat44-ei interfaces",
   .function = nat44_ei_show_interfaces_command_fn,
 };
 
 /*?
  * @cliexpar
- * @cliexstart{nat44 ei add static mapping}
+ * @cliexstart{nat44-ei add static mapping}
  * Static mapping allows hosts on the external network to initiate connection
  * to to the local network host.
  * To create static mapping between local host address 10.0.0.3 port 6303 and
  * external address 4.4.4.4 port 3606 for TCP protocol use:
- *  vpp# nat44 ei add static mapping tcp local 10.0.0.3 6303 external 4.4.4.4
+ *  vpp# nat44-ei add static mapping tcp local 10.0.0.3 6303 external 4.4.4.4
 3606
  * If not runnig "static mapping only" NAT plugin mode use before:
- *  vpp# nat44 ei add address 4.4.4.4
+ *  vpp# nat44-ei add address 4.4.4.4
  * To create address only static mapping between local and external address
 use:
- *  vpp# nat44 ei add static mapping local 10.0.0.3 external 4.4.4.4
+ *  vpp# nat44-ei add static mapping local 10.0.0.3 external 4.4.4.4
  * To create ICMP static mapping between local and external with ICMP echo
  * identifier 10 use:
- *  vpp# nat44 ei add static mapping icmp local 10.0.0.3 10 external 4.4.4.4 10
+ *  vpp# nat44-ei add static mapping icmp local 10.0.0.3 10 external 4.4.4.4 10
  * @cliexend
 ?*/
 VLIB_CLI_COMMAND (add_static_mapping_command, static) = {
-  .path = "nat44 ei add static mapping",
+  .path = "nat44-ei add static mapping",
   .function = add_static_mapping_command_fn,
-  .short_help = "nat44 ei add static mapping tcp|udp|icmp local <addr> "
+  .short_help = "nat44-ei add static mapping tcp|udp|icmp local <addr> "
 		"[<port|icmp-echo-id>] "
 		"external <addr> [<port|icmp-echo-id>] [vrf <table-id>] [del]",
 };
 
 /*?
  * @cliexpar
- * @cliexstart{nat44 ei add identity mapping}
+ * @cliexstart{nat44-ei add identity mapping}
  * Identity mapping translate an IP address to itself.
  * To create identity mapping for address 10.0.0.3 port 6303 for TCP protocol
  * use:
- *  vpp# nat44 ei add identity mapping 10.0.0.3 tcp 6303
+ *  vpp# nat44-ei add identity mapping 10.0.0.3 tcp 6303
  * To create identity mapping for address 10.0.0.3 use:
- *  vpp# nat44 ei add identity mapping 10.0.0.3
+ *  vpp# nat44-ei add identity mapping 10.0.0.3
  * To create identity mapping for DHCP addressed interface use:
- *  vpp# nat44 ei add identity mapping external GigabitEthernet0/a/0 tcp 3606
+ *  vpp# nat44-ei add identity mapping external GigabitEthernet0/a/0 tcp 3606
  * @cliexend
 ?*/
 VLIB_CLI_COMMAND (add_identity_mapping_command, static) = {
-  .path = "nat44 ei add identity mapping",
+  .path = "nat44-ei add identity mapping",
   .function = add_identity_mapping_command_fn,
   .short_help =
-    "nat44 ei add identity mapping <ip4-addr>|external <interface> "
+    "nat44-ei add identity mapping <ip4-addr>|external <interface> "
     "[<protocol> <port>] [vrf <table-id>] [del]",
 };
 
 /*?
  * @cliexpar
- * @cliexstart{show nat44 ei static mappings}
+ * @cliexstart{show nat44-ei static mappings}
  * Show NAT44 static mappings.
- * vpp# show nat44 ei static mappings
+ * vpp# show nat44-ei static mappings
  * NAT44 static mappings:
  *  local 10.0.0.3 external 4.4.4.4 vrf 0
  *  tcp local 192.168.0.4:6303 external 4.4.4.3:3606 vrf 0
@@ -1910,109 +1910,109 @@ VLIB_CLI_COMMAND (add_identity_mapping_command, static) = {
  * @cliexend
 ?*/
 VLIB_CLI_COMMAND (nat44_ei_show_static_mappings_command, static) = {
-  .path = "show nat44 ei static mappings",
-  .short_help = "show nat44 ei static mappings",
+  .path = "show nat44-ei static mappings",
+  .short_help = "show nat44-ei static mappings",
   .function = nat44_ei_show_static_mappings_command_fn,
 };
 
 /*?
  * @cliexpar
- * @cliexstart{nat44 ei add interface address}
+ * @cliexstart{nat44-ei add interface address}
  * Use NAT44 pool address from specific interfce
  * To add NAT44 pool address from specific interface use:
- *  vpp# nat44 ei add interface address GigabitEthernet0/8/0
+ *  vpp# nat44-ei add interface address GigabitEthernet0/8/0
  * @cliexend
 ?*/
 VLIB_CLI_COMMAND (nat44_ei_add_interface_address_command, static) = {
-  .path = "nat44 ei add interface address",
-  .short_help = "nat44 ei add interface address <interface> [del]",
+  .path = "nat44-ei add interface address",
+  .short_help = "nat44-ei add interface address <interface> [del]",
   .function = nat44_ei_add_interface_address_command_fn,
 };
 
 /*?
  * @cliexpar
- * @cliexstart{show nat44 ei interface address}
+ * @cliexstart{show nat44-ei interface address}
  * Show NAT44 pool address interfaces
- * vpp# show nat44 ei interface address
+ * vpp# show nat44-ei interface address
  * NAT44 pool address interfaces:
  *  GigabitEthernet0/a/0
  * @cliexend
 ?*/
 VLIB_CLI_COMMAND (nat44_ei_show_interface_address_command, static) = {
-  .path = "show nat44 ei interface address",
-  .short_help = "show nat44 ei interface address",
+  .path = "show nat44-ei interface address",
+  .short_help = "show nat44-ei interface address",
   .function = nat44_ei_show_interface_address_command_fn,
 };
 
 /*?
  * @cliexpar
- * @cliexstart{show nat44 ei sessions}
+ * @cliexstart{show nat44-ei sessions}
  * Show NAT44 sessions.
  * @cliexend
 ?*/
 VLIB_CLI_COMMAND (nat44_ei_show_sessions_command, static) = {
-  .path = "show nat44 ei sessions",
-  .short_help = "show nat44 ei sessions [detail|metrics]",
+  .path = "show nat44-ei sessions",
+  .short_help = "show nat44-ei sessions [detail|metrics]",
   .function = nat44_ei_show_sessions_command_fn,
 };
 
 /*?
  * @cliexpar
- * @cliexstart{nat44 ei del user}
+ * @cliexstart{nat44-ei del user}
  * To delete all NAT44 user sessions:
- *  vpp# nat44 ei del user 10.0.0.3
+ *  vpp# nat44-ei del user 10.0.0.3
  * @cliexend
 ?*/
 VLIB_CLI_COMMAND (nat44_ei_del_user_command, static) = {
-  .path = "nat44 ei del user",
-  .short_help = "nat44 ei del user <addr> [fib <index>]",
+  .path = "nat44-ei del user",
+  .short_help = "nat44-ei del user <addr> [fib <index>]",
   .function = nat44_ei_del_user_command_fn,
 };
 
 /*?
  * @cliexpar
- * @cliexstart{clear nat44 ei sessions}
+ * @cliexstart{clear nat44-ei sessions}
  * To clear all NAT44 sessions
- *  vpp# clear nat44 ei sessions
+ *  vpp# clear nat44-ei sessions
  * @cliexend
 ?*/
 VLIB_CLI_COMMAND (nat44_ei_clear_sessions_command, static) = {
-  .path = "clear nat44 ei sessions",
-  .short_help = "clear nat44 ei sessions",
+  .path = "clear nat44-ei sessions",
+  .short_help = "clear nat44-ei sessions",
   .function = nat44_ei_clear_sessions_command_fn,
 };
 
 /*?
  * @cliexpar
- * @cliexstart{nat44 ei del session}
+ * @cliexstart{nat44-ei del session}
  * To administratively delete NAT44 session by inside address and port use:
- *  vpp# nat44 ei del session in 10.0.0.3:6303 tcp
+ *  vpp# nat44-ei del session in 10.0.0.3:6303 tcp
  * To administratively delete NAT44 session by outside address and port use:
- *  vpp# nat44 ei del session out 1.0.0.3:6033 udp
+ *  vpp# nat44-ei del session out 1.0.0.3:6033 udp
  * @cliexend
 ?*/
 VLIB_CLI_COMMAND (nat44_ei_del_session_command, static) = {
-  .path = "nat44 ei del session",
-  .short_help = "nat44 ei del session in|out <addr>:<port> tcp|udp|icmp [vrf "
+  .path = "nat44-ei del session",
+  .short_help = "nat44-ei del session in|out <addr>:<port> tcp|udp|icmp [vrf "
 		"<id>] [external-host <addr>:<port>]",
   .function = nat44_ei_del_session_command_fn,
 };
 
 /*?
  * @cliexpar
- * @cliexstart{nat44 ei forwarding}
+ * @cliexstart{nat44-ei forwarding}
  * Enable or disable forwarding
  * Forward packets which don't match existing translation
  * or static mapping instead of dropping them.
  * To enable forwarding, use:
- *  vpp# nat44 ei forwarding enable
+ *  vpp# nat44-ei forwarding enable
  * To disable forwarding, use:
- *  vpp# nat44 ei forwarding disable
+ *  vpp# nat44-ei forwarding disable
  * @cliexend
 ?*/
 VLIB_CLI_COMMAND (nat44_ei_forwarding_set_command, static) = {
-  .path = "nat44 ei forwarding",
-  .short_help = "nat44 ei forwarding enable|disable",
+  .path = "nat44-ei forwarding",
+  .short_help = "nat44-ei forwarding enable|disable",
   .function = nat44_ei_forwarding_set_command_fn,
 };
 
